@@ -1,0 +1,11 @@
+version: "3.9"
+services:
+  dmarc_receiver:
+    build: .
+    ports:
+      - "25:25"
+      - "587:587"
+    volumes:
+      - ./my_cert.fullchain.pem:/etc/ssl/dmarc.example.com.fullchain.pem:ro  
+      - ./my_cert.key:/etc/ssl/private/dmarc.example.com.key:ro
+      - ./smtpd.conf:/etc/smtpd.conf:ro
