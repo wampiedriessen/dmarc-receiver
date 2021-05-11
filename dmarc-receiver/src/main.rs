@@ -29,7 +29,13 @@ async fn run(config: Config) -> Result<(), String> {
     println!("Running exporter '{}'", config.exporter.name());
     println!("==========");
 
-    let full_reports = parser::parse_stdin()?;
+    let full_reports: Vec<parser::dmarc_definition::feedback>;
+    let stdin = std::io::stdin();
+    {
+        let mut stdin = stdin.lock();
+
+        full_reports = parser::parse(&mut stdin)?;
+    }
 
     let export_reports = map_to_export_format(&full_reports);
 

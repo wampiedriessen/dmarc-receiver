@@ -7,11 +7,8 @@ RUN cargo build --release
 
 FROM debian:bullseye-slim
 
-ARG DEBIAN_FRONTEND noninteractive
-ARG RUNLEVEL 1
-
 RUN apt-get update && \
-    apt-get install -y ca-certificates tzdata opensmtpd openssl
+    RUNLEVEL=1 DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates tzdata opensmtpd openssl
 
 COPY --from=builder /dmarc-receiver/target/release/dmarc-receiver /bin/dmarc-receiver
 

@@ -1,16 +1,12 @@
 pub mod dmarc_definition;
 use std::io::{self, BufRead, BufReader};
 
-pub fn parse_stdin() -> Result<Vec<dmarc_definition::feedback>, String> {
-    let stdin = io::stdin();
-    let mut stdin = stdin.lock();
+pub fn parse(mut handle: &mut dyn io::BufRead) -> Result<Vec<dmarc_definition::feedback>, String> {
 
     // skip headers
-    let bytes_read = skip_headers(&mut stdin)?;
+    skip_headers(&mut handle)?;
 
-    stdin.consume(bytes_read);
-
-    let feedback = parse_base64(&mut stdin)?;
+    let feedback = parse_base64(&mut handle)?;
 
     if feedback.len() == 0 {
         return Err(String::from("No DMARC files were found in input"));
@@ -19,17 +15,21 @@ pub fn parse_stdin() -> Result<Vec<dmarc_definition::feedback>, String> {
     Ok(feedback)
 }
 
-fn parse_base64(mut raw_handle: &mut dyn io::Read) -> Result<Vec<dmarc_definition::feedback>, String> {
-
-    // TODO: Does not accept whitespace '\n' within base64 :/ That does not work for us I guess
-    // create base64 decoder to decode the stream on-the-fly
-    let mut decoded_handle = base64::read::DecoderReader::new(&mut raw_handle, base64::STANDARD);
+fn parse_base64(raw_handle: &mut dyn io::BufRead) -> Result<Vec<dmarc_definition::feedback>, String> {
 
     let mut dmarc_files = Vec::<dmarc_definition::feedback>::new();
 
+    let mut b64_file = String::new();
+    raw_handle.read_to_string(&mut b64_file).map_err(|_| "Could not read body part of email")?;
+
+    b64_file.retain(|c| !c.is_whitespace());
+
+    let decoded_file = base64::decode(b64_file).map_err(|e| format!("Could not decode base64: {:?}", e))?;
+    let mut stream = io::Cursor::new(decoded_file);
+
     loop {
         // for each file in zipfile-archive:
-        match zip::read::read_zipfile_from_stream(&mut decoded_handle)
+        match zip::read::read_zipfile_from_stream(&mut stream)
             .map_err(|e| format!("Error encountered while reading zip: {:?}", e))?
         {
             Some(contained_file) => {
@@ -43,28 +43,27 @@ fn parse_base64(mut raw_handle: &mut dyn io::Read) -> Result<Vec<dmarc_definitio
     }
 }
 
-fn skip_headers(handle: &mut dyn io::Read) -> Result<usize, String> {
+fn skip_headers(handle: &mut dyn io::Read) -> Result<(), String> {
     let mut reader = BufReader::new(handle);
-    let mut bytes_read = 0;
     loop {
         let mut line = String::new();
         let len = reader.read_line(&mut line)
             .map_err(|_| "Could not read line from email")?;
-
-        bytes_read += len;
         
         if len == 0 {
             return Err(String::from("Could not find message body"));
         }
 
         if line == "\n" {
-            return Ok(bytes_read);
+            return Ok(());
         }       
     }
 }
 
 #[cfg(test)]
 mod test {
+
+    use std::io::Read;
 
     const HOLYSHIP_TEST_INPUT: &'static str = "
 UEsDBAoAAAAIAC9I7VC/t6AO8QEAALAEAAAwAAAAZ29vZ2xlLmNvbSFob2x5c2hpcC5ubCExNTk0
@@ -82,10 +81,32 @@ LmNvbSFob2x5c2hpcC5ubCExNTk0NTEyMDAwITE1OTQ1OTgzOTkueG1sUEsFBgAAAAABAAEAXgAA
 AD8CAAAAAA==
 ";
 
+    const EMAIL_HEADERS: &'static str = "X-RANDOM-HEADER1: lala
+X-RANDOM-HEADER2:
+    _value_of_header_2
+X-Header-3
+
+
+";
+
     #[test]
-    fn name() {
+    fn contents_only() {
         let mut handle = std::io::Cursor::new(HOLYSHIP_TEST_INPUT);
         let reports = super::parse_base64(&mut handle).unwrap();
+
+        assert_eq!(1, reports.len());
+        assert_eq!(1, reports[0].record.iter().map(|x| x.row.count).sum::<u32>());
+        assert_eq!("holyship.nl", reports[0].policy_published.domain);
+    }
+
+    #[test]
+    fn entire_mail() {
+        let headers = std::io::Cursor::new(EMAIL_HEADERS);
+        let file = std::io::Cursor::new(HOLYSHIP_TEST_INPUT);
+
+        let mut handle = headers.chain(file);
+
+        let reports = super::parse(&mut handle).unwrap();
 
         assert_eq!(1, reports.len());
         assert_eq!(1, reports[0].record.iter().map(|x| x.row.count).sum::<u32>());
