@@ -19,21 +19,25 @@ fn parse_base64(raw_handle: &mut dyn io::BufRead) -> Result<Vec<dmarc_definition
 
     let mut dmarc_files = Vec::<dmarc_definition::feedback>::new();
 
+    // b64 encoded zipfile to string
     let mut b64_file = String::new();
     raw_handle.read_to_string(&mut b64_file).map_err(|_| "Could not read body part of email")?;
 
+    // strip whitespace from b64 string
     b64_file.retain(|c| !c.is_whitespace());
 
-    let decoded_file = base64::decode(b64_file).map_err(|e| format!("Could not decode base64: {:?}", e))?;
-    let mut stream = io::Cursor::new(decoded_file);
+    let mut stream = io::Cursor::new(b64_file);
+
+    let mut decoded_stream = base64::read::DecoderReader::new(&mut stream, base64::STANDARD);
 
     loop {
         // for each file in zipfile-archive:
-        match zip::read::read_zipfile_from_stream(&mut stream)
+        match zip::read::read_zipfile_from_stream(&mut decoded_stream)
             .map_err(|e| format!("Error encountered while reading zip: {:?}", e))?
         {
             Some(contained_file) => {
                 dmarc_files.push(
+                    // deserialize XML report file
                     serde_xml_rs::from_reader(contained_file)
                         .map_err(|_| "Could not parse dmarc XML file")?
                     );

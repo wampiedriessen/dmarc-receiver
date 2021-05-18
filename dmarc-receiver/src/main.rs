@@ -44,12 +44,14 @@ async fn run(config: Config) -> Result<(), String> {
     Ok(())
 }
 
+// public struct format supplied to exporters
 #[derive(Serialize, Debug)]
 pub struct DmarcReport {
     pub domain: String,
     pub num_mails: u32,
 }
 
+// mapping from formal format to export format
 fn map_to_export_format(dmarc: &Vec<parser::dmarc_definition::feedback>) -> Vec<DmarcReport> {
     let mut reports = Vec::with_capacity(dmarc.len());
 

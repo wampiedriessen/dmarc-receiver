@@ -9,18 +9,18 @@ use super::ElasticSearchExporter;
 use super::Exporter;
 use super::DmarcReport;
 
-
 impl ElasticSearchExporter {
     pub const EXPORTER_NAME: &'static str = "elasticsearch";
 
-    pub fn new() -> Result<ElasticSearchExporter, String> {
-        let envvar_endpoint = "DMARC_RECEIVER_ELK_ENDPOINT";
-        let envvar_index = "DMARC_RECEIVER_ELK_INDEX";
+    const ENVVAR_ENDPOINT: &'static str = "DMARC_RECEIVER_ELK_ENDPOINT";
+    const ENVVAR_INDEX: &'static str = "DMARC_RECEIVER_ELK_INDEX";
 
-        let endpoint = env::var(envvar_endpoint)
-            .map_err(|_| format!("Missing ElasticSearch endpoint {}", envvar_endpoint))?;
-        let index = env::var(envvar_index)
-            .map_err(|_| format!("Missing ElasticSearch index {}", envvar_index))?;
+    pub fn new() -> Result<ElasticSearchExporter, String> {
+
+        let endpoint = env::var(ElasticSearchExporter::ENVVAR_ENDPOINT)
+            .map_err(|_| format!("Missing ElasticSearch endpoint {}", ElasticSearchExporter::ENVVAR_ENDPOINT))?;
+        let index = env::var(ElasticSearchExporter::ENVVAR_INDEX)
+            .map_err(|_| format!("Missing ElasticSearch index {}", ElasticSearchExporter::ENVVAR_INDEX))?;
 
         let client = create_elk_client(endpoint.as_str())
             .map_err(|_| "Could not configure ElasticSearch client")?;
@@ -31,8 +31,6 @@ impl ElasticSearchExporter {
         })
     }
 }
-
-
 
 #[async_trait::async_trait]
 impl Exporter for ElasticSearchExporter {
@@ -63,20 +61,7 @@ impl Exporter for ElasticSearchExporter {
     }
 }
 
-
-
 fn create_elk_client(endpoint: &str) -> Result<Elasticsearch, Error> {
     let transport = Transport::single_node(endpoint)?;
     Ok(Elasticsearch::new(transport))
 }
-
-
-
-// #[cfg(test)]
-// mod test {
-
-//     #[test]
-//     fn posts_with_reqwest() {
-//         super::my_implementation();
-//     }
-// }
