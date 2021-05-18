@@ -3,8 +3,8 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DateRangeType {
-    pub begin:  u32,
-    pub end:    u32
+    pub begin:  u64,
+    pub end:    u64
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -18,14 +18,14 @@ pub struct ReportMetadataType {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum AlignmentType {
     r,
     s
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DispositionType {
     none,
     quarantine,
@@ -44,7 +44,7 @@ pub struct PolicyPublishedType {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DMARCResultType {
     pass,
     fail
@@ -90,7 +90,7 @@ pub struct IdentifierType {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum DKIMResultType {
     none,
     pass,
@@ -101,7 +101,7 @@ pub enum DKIMResultType {
     permerror
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DKIMAuthResultType {
     pub domain:         String,
     pub selector:       Option<String>,
@@ -110,14 +110,14 @@ pub struct DKIMAuthResultType {
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SPFDomainScope {
     helo,
     mfrom
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum SPFResultType {
     none,
     neutral,
@@ -128,14 +128,14 @@ pub enum SPFResultType {
     permerror
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SPFAuthResultType {
     pub domain: String,
     pub scope:  Option<SPFDomainScope>,
     pub result: SPFResultType
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AuthResultType {
     pub dkim:   Option<Vec<DKIMAuthResultType>>,
     pub spf:    Vec<SPFAuthResultType>
