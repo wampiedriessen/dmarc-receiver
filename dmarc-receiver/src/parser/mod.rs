@@ -1,7 +1,7 @@
 pub mod dmarc_definition;
-use std::io::{self, BufRead, BufReader};
+use std::io::{BufRead, Cursor};
 
-pub fn parse(mut handle: &mut dyn io::BufRead) -> Result<Vec<dmarc_definition::feedback>, String> {
+pub fn parse(mut handle: &mut dyn BufRead) -> Result<Vec<dmarc_definition::feedback>, String> {
 
     // skip headers
     skip_headers(&mut handle)?;
@@ -15,7 +15,7 @@ pub fn parse(mut handle: &mut dyn io::BufRead) -> Result<Vec<dmarc_definition::f
     Ok(feedback)
 }
 
-fn parse_base64(raw_handle: &mut dyn io::BufRead) -> Result<Vec<dmarc_definition::feedback>, String> {
+fn parse_base64(raw_handle: &mut dyn BufRead) -> Result<Vec<dmarc_definition::feedback>, String> {
 
     let mut dmarc_files = Vec::<dmarc_definition::feedback>::new();
 
@@ -26,7 +26,7 @@ fn parse_base64(raw_handle: &mut dyn io::BufRead) -> Result<Vec<dmarc_definition
     // strip whitespace from b64 string
     b64_file.retain(|c| !c.is_whitespace());
 
-    let mut stream = io::Cursor::new(b64_file);
+    let mut stream = Cursor::new(b64_file);
 
     let mut decoded_stream = base64::read::DecoderReader::new(&mut stream, base64::STANDARD);
 
@@ -47,13 +47,12 @@ fn parse_base64(raw_handle: &mut dyn io::BufRead) -> Result<Vec<dmarc_definition
     }
 }
 
-fn skip_headers(handle: &mut dyn io::Read) -> Result<(), String> {
-    let mut reader = BufReader::new(handle);
+fn skip_headers(handle: &mut dyn BufRead) -> Result<(), String> {
     loop {
         let mut line = String::new();
-        let len = reader.read_line(&mut line)
+        let len = handle.read_line(&mut line)
             .map_err(|_| "Could not read line from email")?;
-        
+
         if len == 0 {
             return Err(String::from("Could not find message body"));
         }

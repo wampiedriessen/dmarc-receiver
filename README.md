@@ -22,6 +22,10 @@ Edit the action called `"dmarc_receive"` the `dmarc-receiver` executable require
 
 ## Export Modules
 
+The export module you wish to use must be supplied by setting the `DMARC_RECEIVER_EXPORTER` environment variable
+
+### Elasticsearch
+
 ### Webhook
 `"webhook https://example.com/api/ding"` This configures dmarc-receiver to forward dmarc reports to the endpoint provided in the [JSON.md](JSON Format)
 
