@@ -51,8 +51,6 @@ impl Exporter for ElasticSearchExporter {
             .send()
             .await
             .map_err(|e| format!("Encountered ELK error:\n{:?}", e))?;
-    
-        println!("{:?}", response);
 
         match response.status_code().is_success() {
             true => Ok(()),
