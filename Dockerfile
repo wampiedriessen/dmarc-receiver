@@ -7,7 +7,9 @@ RUN cargo build --release
 
 FROM debian:bullseye-slim
 
-RUN apt-get update && \
+RUN mkdir -p /etc/systemd/system-preset && \
+    echo "disable *" > /etc/systemd/system-preset/00-disable-all.preset && \
+    apt-get update && \
     RUNLEVEL=1 DEBIAN_FRONTEND=noninteractive apt-get install -y ca-certificates tzdata opensmtpd openssl
 
 COPY --from=builder /dmarc-receiver/target/release/dmarc-receiver /bin/dmarc-receiver

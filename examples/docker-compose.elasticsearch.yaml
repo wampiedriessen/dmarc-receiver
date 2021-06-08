@@ -1,0 +1,25 @@
+version: "3.3"
+services:
+  dmarc_receiver:
+    # image: wampiedriessen/dmarc-receiver:0.1
+    build: ../
+    ports:
+      - "25:25"
+      - "587:587"
+    volumes:
+      - ./my_cert.fullchain.pem:/etc/ssl/dmarc.example.com.fullchain.pem:ro  
+      - ./my_cert.key:/etc/ssl/private/dmarc.example.com.key:ro
+      - ./smtpd.conf:/etc/smtpd/smtpd.conf:ro
+    environment:
+        DMARC_RECEIVER_EXPORTER: elasticsearch
+        DMARC_RECEIVER_ELK_ENDPOINT: http://elk:9200/
+        DMARC_RECEIVER_ELK_INDEX: dmarc
+  elk:
+    image: sebp/elk
+    ports:
+        - "5601:5601"
+    volumes:
+        - "elkdata:/var/lib/elasticsearch"
+
+volumes:
+    elkdata:
